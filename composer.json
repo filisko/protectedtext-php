@@ -1,6 +1,6 @@
 {
     "name": "filisko/protectedtext-php",
-    "description": "ProtectedText non-official API for PHP.",
+    "description": "Non-official ProtectedText client for PHP.",
     "keywords": ["protectedtext", "safe-notes", "api"],
     "type": "package",
     "require": {
