@@ -191,10 +191,6 @@ class ProtectedText
         $this->content = $content;
         $this->password = $password;
 
-        if ($this->hasMetadata()) {
-            $this->metadata = 11;
-        }
-
         return $this;
     }
 
