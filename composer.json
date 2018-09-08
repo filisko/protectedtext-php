@@ -1,0 +1,20 @@
+{
+    "name": "filisko/protectedtext-php",
+    "description": "ProtectedText non-official API for PHP.",
+    "keywords": ["protectedtext", "safe-notes", "api"],
+    "type": "package",
+    "require": {
+        "blocktrail/cryptojs-aes-php": "^0.1.0",
+        "guzzlehttp/guzzle": "^6.3"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {"Filisko\\ProtectedText\\": "src/"}
+    },
+    "authors": [
+        {
+            "name": "Filis Futsarov",
+            "email": "filisfutsarov@gmail.com"
+        }
+    ]
+}
