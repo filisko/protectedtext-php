@@ -16,5 +16,8 @@
             "name": "Filis Futsarov",
             "email": "filisfutsarov@gmail.com"
         }
-    ]
+    ],
+    "require-dev": {
+        "symfony/var-dumper": "^4.3"
+    }
 }
