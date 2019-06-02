@@ -1,2 +1,6 @@
 vendor
-test.php
+composer.lock
+.php_cs.cache
+.phpunit.result.cache
+coverage
+tests.php
