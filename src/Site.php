@@ -153,8 +153,9 @@ class Site
         // it's necessary to remove the site hash from the end of decrypted content
         $content = Helper::removeStringFromEnd($this->getSiteHash(), $content);
 
-        // this is needed to make the save, update or delete request
+        // this is needed to make future HTTP requests
         $this->initHashContent = self::hashContent($content, $password, $this->expectedDBVersion);
+
         $this->decryptedContent = $content;
         $this->password = $password;
 
@@ -186,13 +187,16 @@ class Site
         return null;
     }
 
-    public function getMetadata()
+    public function getMetadata($key = null)
     {
         $metadataTab = $this->getRawMetadata();
         if (!$metadataTab) return null;
 
-        $json = json_decode(str_replace(self::APP_METADATA_STRING, '', $metadataTab), true);
-        return $json;
+        $result = json_decode(str_replace(self::APP_METADATA_STRING, '', $metadataTab), true);
+
+        if ($key) return $result[$key];
+
+        return $result;
     }
 
     public function setMetadata(array $metadata)
@@ -213,9 +217,7 @@ class Site
      */
     protected function getRawTabs()
     {
-        if (!$this->isDecrypted()) throw new \Exception('Decrypt this site first');
-
-        return explode($this->getTabSeparatorHash(), $this->decryptedContent);
+        return explode($this->getTabSeparatorHash(), $this->getDecryptedContent());
     }
 
     /**

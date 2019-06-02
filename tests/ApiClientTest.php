@@ -1,7 +1,5 @@
 <?php
-
 namespace Test;
-
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
@@ -19,7 +17,7 @@ class ApiClientTest extends TestCase
 
     protected $mockHandler;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->mockHandler = new MockHandler();
 
@@ -263,6 +261,36 @@ JSON;
         $this->assertTrue($this->site->hasMetadata());
     }
 
+
+    /**
+     * @test
+     */
+    public function testGetMetadataOnSiteWithoutMetadataBeforeDecryptionThrowsException()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+
+        $this->expectException(DecryptionNeeded::class);
+        $this->site->getMetadata();
+    }
+
+    /**
+     * @test
+     */
+    public function testGetMetadataOnSiteWithoutMetadataAfterDecryptionReturnsNull()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $this->assertNull($this->site->getMetadata());
+    }
+
     /**
      * @test
      */
@@ -277,4 +305,67 @@ JSON;
 
         $this->assertIsArray($this->site->getMetadata());
     }
+
+    // /**
+    //  * @test
+    //  */
+    // public function testSetMetadataOnSiteWithoutMetadataBeforeDecryptionThrowsException()
+    // {
+    //     $json = $this->existentSiteJson;
+
+    //     $this->mockHandler->append(new Response(200, [], $json));
+    //     $this->site = $this->apiClient->get('phptest');
+
+    //     $this->expectException(DecryptionNeeded::class);
+    //     $this->site->getMetadata();
+    // }
+
+    /**
+     * @test
+     */
+    public function testSetMetadataOnSiteWithMetadataBeforeDecryptionThrowsException()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+
+        $this->expectException(DecryptionNeeded::class);
+
+        $metadata = []; // can be anything
+        $this->site->setMetadata($metadata);
+    }
+
+    // /**
+    //  * @test
+    //  */
+    // public function testSetMetadataOnSiteWithMetadataAfterDecryption()
+    // {
+    //     $json = $this->existentSiteJsonWithMetadata;
+
+    //     $this->mockHandler->append(new Response(200, [], $json));
+    //     $this->site = $this->apiClient->get('phptest');
+
+    //     $password = '123123';
+    //     $this->site->decrypt($password);
+
+    //     // $stub = $this->createMock(Site::class);
+    //     // $stub->method('getMetadata')
+    //     //     ->willReturn([
+    //     //         'title' => 'Some'
+    //     //     ]);
+
+    //     // $this->assertSame([
+    //     //     'title' => 'Some'
+    //     // ], $stub->getMetadata());
+
+        
+    //     $metadata = [
+    //         'title' => 'Some'
+    //     ];
+
+    //     dd($this->site->setMetadata($metadata));
+
+    //     $this->assertEquals($metadata['title'], $this->site->getMetadata('title'));
+    // }
 }
