@@ -25,4 +25,18 @@ class Helper
     {
         return preg_replace('/'. preg_quote($needle, '/') . '$/', '', $string);
     }
+
+    public static function getLastArrayKey(array $array)
+    {
+        end($array);
+        $key = key($array);
+        return $key;
+    }
+
+    public static function removeLastElementFromArray(array &$array)
+    {
+        $lastKey = self::getLastArrayKey($array);
+        unset($array[$lastKey]);
+        return $array;
+    }
 }

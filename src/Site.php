@@ -88,7 +88,7 @@ class Site
         return $this->encryptedContent;
     }
 
-    protected function getDecryptedContent()
+    public function getDecryptedContent()
     {
         if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to play with decrypted content');
 
@@ -190,23 +190,43 @@ class Site
     public function getMetadata($key = null)
     {
         $metadataTab = $this->getRawMetadata();
-        if (!$metadataTab) return null;
+        if (!$metadataTab) return [];
 
         $result = json_decode(str_replace(self::APP_METADATA_STRING, '', $metadataTab), true);
 
-        if ($key) return $result[$key];
+        if ($key) return $result[$key] ?? null;
 
         return $result;
     }
 
     public function setMetadata(array $metadata)
     {
-        $tabs = $this->getRawTabs();
-        end($tabs);
-        $key = key($tabs);
-
-        $tabs[$key] = self::APP_METADATA_STRING . json_encode($metadata);
+        if (count($metadata) === 0) return $this->removeMetadata();
         
+        // required
+        $metadata['version'] = 1;
+        $metadata['color'] = $metadata['color'] ?? -1118482;
+
+        $metadataRaw = self::APP_METADATA_STRING . json_encode($metadata);
+
+        $tabs = $this->getRawTabs();
+        $key = Helper::getLastArrayKey($tabs);
+
+        // if does not have metadata, add new element at the end
+        if (!$this->hasMetadata()) $key++;
+
+        $tabs[$key] = $metadataRaw;
+        
+        return $this->updateTabs($tabs, true);
+    }
+
+    public function removeMetadata()
+    {
+        if (!$this->hasMetadata()) return $this;
+        
+        $tabs = $this->getRawTabs();
+        Helper::removeLastElementFromArray($tabs);
+
         return $this->updateTabs($tabs, true);
     }
 
@@ -232,18 +252,16 @@ class Site
         
         // exclude metadata
         if ($this->hasMetadata()) {
-            end($rawTabs); 
-            $lastPosition = key($rawTabs);
-            unset($rawTabs[$lastPosition]);
+            Helper::removeLastElementFromArray($rawTabs);
         }
 
         return $rawTabs;
     }
 
-    public function updateTabs(array $tabs, $tabsComeWithMetadata = false)
+    public function updateTabs(array $tabs, $tabsIncludeMetadata = false)
     {
         // keep metadata (if there is any) on the content
-        if (!$tabsComeWithMetadata && $this->hasMetadata()) {
+        if (!$tabsIncludeMetadata && $this->hasMetadata()) {
             $tabs[] = $this->getRawMetadata();
         }
 

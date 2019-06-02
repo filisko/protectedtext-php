@@ -75,6 +75,48 @@ JSON;
     /**
      * @test
      */
+    public function testGetDecryptedContentBeforeDecryptionThrowsException()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+
+        $this->expectException(DecryptionNeeded::class);
+        $this->site->getDecryptedContent();
+    }
+
+    /**
+     * @test
+     */
+    public function testGetDecryptedContentOnSiteWithoutMetadata()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $this->site->decrypt(123123);
+
+        $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond content');
+    }
+
+    /**
+     * @test
+     */
+    public function testGetDecryptedContentOnSiteWithMetadata()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $this->site->decrypt(123123);
+
+        $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488c♻ Reload this website to hide mobile app metadata! ♻{"version":1,"title":"Title","color":-1118482}');
+    }
+
+    /**
+     * @test
+     */
     public function testExists()
     {
         $json = $this->existentSiteJson;
@@ -279,7 +321,7 @@ JSON;
     /**
      * @test
      */
-    public function testGetMetadataOnSiteWithoutMetadataAfterDecryptionReturnsNull()
+    public function testGetMetadataOnSiteWithoutMetadataAfterDecryptionReturnsEmptyArray()
     {
         $json = $this->existentSiteJson;
 
@@ -288,7 +330,7 @@ JSON;
         $password = '123123';
         $this->site->decrypt($password);
 
-        $this->assertNull($this->site->getMetadata());
+        $this->assertSame([], $this->site->getMetadata());
     }
 
     /**
@@ -332,8 +374,116 @@ JSON;
 
         $this->expectException(DecryptionNeeded::class);
 
-        $metadata = []; // can be anything
+        $metadata = [
+            'title' => 'Some title'
+        ]; 
         $this->site->setMetadata($metadata);
+    }
+
+    /**
+     * @test
+     */
+    public function testSetMetadataOnSiteWithMetadataAfterDecryption()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $metadata = [
+            'title' => 'Some title'
+        ];
+        $this->site->setMetadata($metadata);
+
+        $this->assertEquals($metadata['title'], $this->site->getMetadata('title'));
+    }
+    
+    /**
+     * @test
+     */
+    public function testSetMetadataOnSiteWithoutMetadataAfterDecryption()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        
+        $metadata = [
+            'title' => 'Some title'
+        ];
+        $this->site->setMetadata($metadata);
+        
+        $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488c♻ Reload this website to hide mobile app metadata! ♻{"title":"Some title","version":1,"color":-1118482}');
+    }
+    
+    /**
+     * @test
+     */
+    public function testSetMetadataWithEmptyArrayRemovesMetadataOnSiteWithMetadataAfterDecryption()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $this->site->setMetadata([]);
+        
+        $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond content');
+    }
+    
+    /**
+     * @test
+     */
+    public function testRemoveMetadataBeforeDecryptionThrowsException()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+
+        $this->expectException(DecryptionNeeded::class);
+        $this->site->removeMetadata();
+    }
+    
+    /**
+     * @test
+     */
+    public function testRemoveMetadataOnSiteWithMetadataAfterDecryption()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $this->site->removeMetadata();
+        
+        $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond content');
+    }
+    
+    /**
+     * @test
+     */
+    public function testRemoveMetadataOnSiteWithoutMetadataAfterDecryption()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $this->site->removeMetadata();
+        
+        $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond content');
     }
 
     // /**
