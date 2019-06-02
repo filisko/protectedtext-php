@@ -43,8 +43,8 @@ class ApiClient
     {
         if (!$site->getPassword()) throw new \Exception('Site must have a password');
 
-        if (!$site->hasContent()) {
-            throw new \Exception('must have at least one tab');
+        if (!$site->hasEncryptedContent()) {
+            throw new \Exception('encrypted content can not be empty');
         }
 
         $response = $this->client->post($site->getName(), [

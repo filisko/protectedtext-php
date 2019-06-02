@@ -1,10 +1,10 @@
 <?php
 namespace Filisko\ProtectedText;
 
-use Blocktrail\CryptoJSAES\CryptoJSAES;
 use Filisko\ProtectedText\Helper;
 use Filisko\ProtectedText\Exceptions\DecryptionFailed;
 use Filisko\ProtectedText\Exceptions\DecryptionNeeded;
+use InvalidArgumentException;
 
 class Site
 {
@@ -90,7 +90,7 @@ class Site
 
     protected function getDecryptedContent()
     {
-        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to get decrypted content');
+        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to play with decrypted content');
 
         return $this->decryptedContent;
     }
@@ -130,7 +130,7 @@ class Site
 
     public function setPassword($password)
     {
-        if (!$password) throw new \Exception('Password can not be empty');
+        if (!$password) throw new InvalidArgumentException('Password can not be empty');
 
         $this->password = $password;
         
@@ -166,14 +166,14 @@ class Site
         return $this->initHashContent !== null && $this->decryptedContent !== null && $this->password !== null || $this->isNew;
     }
 
-    public function hasContent()
+    public function hasEncryptedContent()
     {
         return (bool)$this->encryptedContent;
     }
 
     public function hasMetadata()
     {
-        return strpos($this->decryptedContent, self::APP_METADATA_STRING) !== false;
+        return strpos($this->getDecryptedContent(), self::APP_METADATA_STRING) !== false;
     }
 
     protected function getRawMetadata()

@@ -19,7 +19,9 @@ $site = $apiClient->get('phptest');
 
 // $site->decrypt(123123);
 
-dd($site->getCurrentHashContent());
+dd($site->hasMetadata());
+
+// dd($site->getCurrentHashContent());
 
 // $site->setPassword(1);
 // $tabs = $site->getTabs();
