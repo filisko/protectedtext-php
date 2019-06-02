@@ -15,20 +15,23 @@ $client = new Client([
 
 $apiClient = new ApiClient($client);
 
-$site = $apiClient->get('filis10');
+$site = $apiClient->get('phptest');
 
-$site->decrypt(1);
+// $site->decrypt(123123);
+
+dd($site->getCurrentHashContent());
+
 // $site->setPassword(1);
-$tabs = $site->getTabs();
-$tabs[0] = 'asdaassd3';
-$site->updateTabs($tabs);
+// $tabs = $site->getTabs();
+// $tabs[0] = 'asdaassd3';
+// $site->updateTabs($tabs);
 
-dd($site->getMetadata());
+// dd($site->getMetadata());
 
-// $apiClient->create($site);
+// // $apiClient->create($site);
 
-// sleep(1);
-dd($apiClient->update($site));
+// // sleep(1);
+// dd($apiClient->update($site));
 // dd($apiClient->delete($site));
 
 

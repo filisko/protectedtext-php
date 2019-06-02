@@ -4,6 +4,7 @@ namespace Filisko\ProtectedText;
 use Blocktrail\CryptoJSAES\CryptoJSAES;
 use Filisko\ProtectedText\Helper;
 use Filisko\ProtectedText\Exceptions\DecryptionFailed;
+use Filisko\ProtectedText\Exceptions\DecryptionNeeded;
 
 class Site
 {
@@ -87,6 +88,13 @@ class Site
         return $this->encryptedContent;
     }
 
+    protected function getDecryptedContent()
+    {
+        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to get decrypted content');
+
+        return $this->decryptedContent;
+    }
+
     public function exists()
     {
         return !$this->isNew;
@@ -94,13 +102,14 @@ class Site
 
     public function getInitHashContent()
     {
-        if (!$this->isDecrypted()) throw new \Exception('Decrypt this site first to get the initHashContent');
+        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to get initHashContent');
+
         return $this->initHashContent;
     }
 
     public function getCurrentHashContent()
     {
-        return self::hashContent($this->decryptedContent, $this->password, $this->expectedDBVersion);
+        return self::hashContent($this->getDecryptedContent(), $this->password, $this->expectedDBVersion);
     }
 
     protected function getTabSeparatorHash()
@@ -121,9 +130,10 @@ class Site
 
     public function setPassword($password)
     {
-        if (!$password) throw new \Exception('Password can not be empty.');
+        if (!$password) throw new \Exception('Password can not be empty');
 
         $this->password = $password;
+        
         return $this;
     }
 
@@ -185,7 +195,7 @@ class Site
         return $json;
     }
 
-    public function setMetadata($metadata)
+    public function setMetadata(array $metadata)
     {
         $tabs = $this->getRawTabs();
         end($tabs);
@@ -228,10 +238,10 @@ class Site
         return $rawTabs;
     }
 
-    public function updateTabs($tabs, $withMetadata = false)
+    public function updateTabs(array $tabs, $tabsComeWithMetadata = false)
     {
         // keep metadata (if there is any) on the content
-        if (!$withMetadata && $this->hasMetadata()) {
+        if (!$tabsComeWithMetadata && $this->hasMetadata()) {
             $tabs[] = $this->getRawMetadata();
         }
 
