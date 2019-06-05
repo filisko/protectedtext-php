@@ -5,7 +5,7 @@ class SiteFactory
 {
     const TAB_SEPARATOR_STRING = '-- tab separator --';
     
-    public static function create($name, $password, $tabs)
+    public static function create($name, $password, array $tabs)
     {
         $siteHash = hash('sha512', '/'.$name);
         $decryptedContent = implode(self::getTabSeparatorHash(), $tabs);
@@ -21,10 +21,5 @@ class SiteFactory
     protected static function getTabSeparatorHash()
     {
         return hash('sha512', self::TAB_SEPARATOR_STRING);
-    }
-
-    protected function getSiteHash()
-    {
-        return hash('sha512', '/'.$this->name);
     }
 }

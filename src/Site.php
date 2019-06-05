@@ -4,6 +4,7 @@ namespace Filisko\ProtectedText;
 use Filisko\ProtectedText\Helper;
 use Filisko\ProtectedText\Exceptions\DecryptionFailed;
 use Filisko\ProtectedText\Exceptions\DecryptionNeeded;
+use Filisko\ProtectedText\Exceptions\UnexistentSite;
 use InvalidArgumentException;
 
 class Site
@@ -102,24 +103,30 @@ class Site
 
     public function getInitHashContent()
     {
-        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to get initHashContent');
+        if (!$this->isDecrypted()) {
+            throw new DecryptionNeeded('Decrypt this site first to get initHashContent');
+        }
 
         return $this->initHashContent;
     }
 
     public function getCurrentHashContent()
     {
-        return self::hashContent($this->getDecryptedContent(), $this->password, $this->expectedDBVersion);
-    }
-
-    protected function getTabSeparatorHash()
-    {
-        return hash('sha512', self::TAB_SEPARATOR_STRING);
+        return self::hashContent(
+            $this->getDecryptedContent(),
+            $this->password,
+            $this->expectedDBVersion
+        );
     }
 
     protected function getSiteHash()
     {
         return hash('sha512', '/'.$this->name);
+    }
+
+    protected static function getTabSeparatorHash()
+    {
+        return hash('sha512', self::TAB_SEPARATOR_STRING);
     }
 
     protected static function hashContent($content, $password, $version)
@@ -144,10 +151,11 @@ class Site
 
     public function decrypt($password)
     {
-        if (!$this->exists()) throw new DecryptionFailed('This site needs to be created first.');
+        if (!$this->exists() || !$this->getEncryptedContent()) {
+            throw new UnexistentSite('This site must be created first, no content to decrypt.');
+        }
 
         $content = Helper::decrypt($this->encryptedContent, $password);
-
         if (!$content) throw new DecryptionFailed('Content could not be decrypted.');
 
         // it's necessary to remove the site hash from the end of decrypted content
@@ -167,11 +175,6 @@ class Site
         return $this->initHashContent !== null && $this->decryptedContent !== null && $this->password !== null || $this->isNew;
     }
 
-    public function hasEncryptedContent()
-    {
-        return (bool)$this->encryptedContent;
-    }
-
     public function hasMetadata()
     {
         return strpos($this->getDecryptedContent(), self::APP_METADATA_STRING) !== false;
@@ -187,15 +190,17 @@ class Site
         return null;
     }
 
-    public function getMetadata($key = null)
+    public function getMetadata()
     {
-        $metadataTab = $this->getRawMetadata();
-        if (!$metadataTab) return [];
+        $result = [];
 
-        $result = json_decode(str_replace(self::APP_METADATA_STRING, '', $metadataTab), true);
-
-        if ($key) return $result[$key] ?? null;
-
+        if ($metadataTab = $this->getRawMetadata()) {
+            $result = json_decode(
+                str_replace(self::APP_METADATA_STRING, '', $metadataTab),
+                true
+            );
+        }
+        
         return $result;
     }
 
@@ -237,7 +242,7 @@ class Site
      */
     protected function getRawTabs()
     {
-        return explode($this->getTabSeparatorHash(), $this->getDecryptedContent());
+        return explode(self::getTabSeparatorHash(), $this->getDecryptedContent());
     }
 
     /**
@@ -260,12 +265,16 @@ class Site
 
     public function updateTabs(array $tabs, $tabsIncludeMetadata = false)
     {
+        if (count($tabs) === 0) {
+            throw new InvalidArgumentException('Provide at least one tab');
+        }
+
         // keep metadata (if there is any) on the content
         if (!$tabsIncludeMetadata && $this->hasMetadata()) {
             $tabs[] = $this->getRawMetadata();
         }
 
-        $this->decryptedContent = implode($this->getTabSeparatorHash(), $tabs);
+        $this->decryptedContent = implode(self::getTabSeparatorHash(), $tabs);
         $this->encryptedContent = Helper::encrypt("{$this->decryptedContent}{$this->getSiteHash()}", $this->password);
 
         return $this;

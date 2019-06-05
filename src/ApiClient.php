@@ -6,7 +6,6 @@ use Filisko\ProtectedText\Site;
 
 class ApiClient
 {
-
     const BASE_URL = 'https://www.protectedtext.com/';
     
     public function __construct(ClientInterface $client)

@@ -9,9 +9,13 @@ use Filisko\ProtectedText\ApiClient;
 use Filisko\ProtectedText\Site;
 use Filisko\ProtectedText\Exceptions\DecryptionFailed;
 use Filisko\ProtectedText\Exceptions\DecryptionNeeded;
+use Filisko\ProtectedText\Exceptions\UnexistentSite;
 use InvalidArgumentException;
 
-class ApiClientTest extends TestCase
+/**
+ * @coversDefaultClass \Filisko\ProtectedText\Site
+ */
+class SiteTest extends TestCase
 {
     protected $apiClient;
 
@@ -44,10 +48,37 @@ JSON;
 "expectedDBVersion":2
 }
 JSON;
+        
+        $this->unexistentSiteJson = <<<JSON
+{
+"eContent":"",
+"isNew":true,
+"currentDBVersion":2,
+"expectedDBVersion":2
+}
+JSON;
     }
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::__construct
+     */
+    public function testConstructor()
+    {
+        $name = 'phptest';
+        $encryptedContent = 'encryptedcontent';
+        $isNew = false;
+
+        $site = new Site('phptest', 'encryptedcontent', $isNew, 2, 2);
+
+        $this->assertEquals($name, $site->getName());
+        $this->assertEquals($encryptedContent, $site->getEncryptedContent());
+        $this->assertTrue($site->exists());
+    }
+
+    /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::getName
      */
     public function testGetName()
     {
@@ -61,6 +92,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getEncryptedContent
      */
     public function testGetEncryptedContent()
     {
@@ -69,11 +101,12 @@ JSON;
         $this->mockHandler->append(new Response(200, [], $json));
         $this->site = $this->apiClient->get('phptest');
 
-        $this->assertEquals('U2FsdGVkX1/HkflrmLEteQpOURUCE9BckYfvvkh1/TwmiyAfTWjFV7bDEChbjOBPsT1ZiyexpmkrR9mlUeSDa08ZLZJ2r38VO38hDl48X7HKDAo7v+wQ2E+PLOleittB/j1k7/EuI2tAtr6yyBJXnpzb0pw5esejvM/nNFxFLoVbFDl6oWF9dLE/L5YUAUaWjhmdi7z97zQZUxymHEYE/aeofHtbWR3561qz6IaHDXvfPPAcc/rlXIo/ayUZRWHNNITnYnHdDNRr1VgGvpHA/E0nrGUe8JzwrRPpLpRv1kmswGbxh1JPjqXxzMq9MEtlQaCCyNTyzz6nzz0omkVWZWfWrrrs/20ePkM5MP2ECYtys8r+/kOm/7afRcZlA7k90F4tVT56Rk2piwnVhcNg5w==', $this->site->getEncryptedContent());
+        $this->assertEquals($this->site->getEncryptedContent(), 'U2FsdGVkX1/HkflrmLEteQpOURUCE9BckYfvvkh1/TwmiyAfTWjFV7bDEChbjOBPsT1ZiyexpmkrR9mlUeSDa08ZLZJ2r38VO38hDl48X7HKDAo7v+wQ2E+PLOleittB/j1k7/EuI2tAtr6yyBJXnpzb0pw5esejvM/nNFxFLoVbFDl6oWF9dLE/L5YUAUaWjhmdi7z97zQZUxymHEYE/aeofHtbWR3561qz6IaHDXvfPPAcc/rlXIo/ayUZRWHNNITnYnHdDNRr1VgGvpHA/E0nrGUe8JzwrRPpLpRv1kmswGbxh1JPjqXxzMq9MEtlQaCCyNTyzz6nzz0omkVWZWfWrrrs/20ePkM5MP2ECYtys8r+/kOm/7afRcZlA7k90F4tVT56Rk2piwnVhcNg5w==');
     }
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getDecryptedContent
      */
     public function testGetDecryptedContentBeforeDecryptionThrowsException()
     {
@@ -88,6 +121,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getDecryptedContent
      */
     public function testGetDecryptedContentOnSiteWithoutMetadata()
     {
@@ -102,6 +136,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getDecryptedContent
      */
     public function testGetDecryptedContentOnSiteWithMetadata()
     {
@@ -116,6 +151,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::exists
      */
     public function testExists()
     {
@@ -129,8 +165,12 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::decrypt
+     * @covers \Filisko\ProtectedText\Site::exists
+     * @covers \Filisko\ProtectedText\Site::getEncryptedContent
+     * @covers \Filisko\ProtectedText\Site::getSiteHash
      */
-    public function testCorrectDecryptionReturnsSiteInstance()
+    public function testDecryptReturnsSiteInstance()
     {
         $json = $this->existentSiteJson;
 
@@ -143,8 +183,12 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::decrypt
+     * @covers \Filisko\ProtectedText\Site::exists
+     * @covers \Filisko\ProtectedText\Site::getEncryptedContent
+     * @covers \Filisko\ProtectedText\Site::getSiteHash
      */
-    public function testWrongDecryptionThrowsException()
+    public function testDecryptThrowsExceptionOnFail()
     {
         $json = $this->existentSiteJson;
 
@@ -155,9 +199,28 @@ JSON;
         $this->expectException(DecryptionFailed::class);
         $this->site->decrypt($password);
     }
+   
+    /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::decrypt
+     * @covers \Filisko\ProtectedText\Site::exists
+     * @covers \Filisko\ProtectedText\Site::getEncryptedContent
+     * @covers \Filisko\ProtectedText\Site::getSiteHash
+     */
+    public function testDecryptOnUnexistentSite()
+    {
+        $json = $this->unexistentSiteJson;
+        
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptestnew');
+
+        $this->expectException(UnexistentSite::class);
+        $this->site->decrypt('password');
+    }
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getInitHashContent
      */
     public function testGetInitHashContentBeforeDecryptionThrowsException()
     {
@@ -172,6 +235,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getInitHashContent
      */
     public function testGetInitHashContentAfterDecryption()
     {
@@ -188,6 +252,8 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getCurrentHashContent
+     * @covers \Filisko\ProtectedText\Site::hashContent
      */
     public function testGetCurrentHashContentBeforeDecryptionThrowsException()
     {
@@ -202,6 +268,8 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getCurrentHashContent
+     * @covers \Filisko\ProtectedText\Site::hashContent
      */
     public function testGetCurrentHashContentAfterDecryption()
     {
@@ -218,6 +286,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::setPassword
      */
     public function testSetEmptyPasswordThrowsException()
     {
@@ -225,14 +294,53 @@ JSON;
 
         $this->mockHandler->append(new Response(200, [], $json));
         $this->site = $this->apiClient->get('phptest');
-        $password = '123123';
+        $password = '';
 
         $this->expectException(InvalidArgumentException::class);
-        $this->site->setPassword('');
+        $this->site->setPassword($password);
     }
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::setPassword
+     */
+    public function testSetPassword()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        
+        $this->assertEquals(
+            $this->site->setPassword($password)->getPassword(),
+            $password
+        );
+    }
+
+    /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::getPassword
+     */
+    public function testGetPassword()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+
+        $this->site->setPassword($password);
+        
+        $this->assertEquals(
+            $this->site->getPassword(),
+            $password
+        );
+    }
+
+    /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::isDecrypted
      */
     public function testIsDecryptedAfterDecryption()
     {
@@ -248,6 +356,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::isDecrypted
      */
     public function testIsDecryptedBeforeDecryption()
     {
@@ -261,6 +370,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::hasMetadata
      */
     public function testHasMetadataOnSiteWithoutMetadataBeforeDecryptionThrowsException()
     {
@@ -275,6 +385,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::hasMetadata
      */
     public function testHasMetadataOnSiteWithoutMetadataAfterDecryption()
     {
@@ -290,6 +401,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::hasMetadata
      */
     public function testHasMetadataOnSiteWithMetadataAfterDecryption()
     {
@@ -303,9 +415,9 @@ JSON;
         $this->assertTrue($this->site->hasMetadata());
     }
 
-
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getMetadata
      */
     public function testGetMetadataOnSiteWithoutMetadataBeforeDecryptionThrowsException()
     {
@@ -320,6 +432,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getMetadata
      */
     public function testGetMetadataOnSiteWithoutMetadataAfterDecryptionReturnsEmptyArray()
     {
@@ -335,6 +448,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::getMetadata
      */
     public function testGetMetadataOnSiteWithMetadataAfterDecryptionReturnsArray()
     {
@@ -345,25 +459,18 @@ JSON;
         $password = '123123';
         $this->site->decrypt($password);
 
-        $this->assertIsArray($this->site->getMetadata());
+        $expected = [
+            "version" => 1,
+            "title" => "Title",
+            "color" => -1118482
+        ];
+        
+        $this->assertEquals($expected, $this->site->getMetadata());
     }
-
-    // /**
-    //  * @test
-    //  */
-    // public function testSetMetadataOnSiteWithoutMetadataBeforeDecryptionThrowsException()
-    // {
-    //     $json = $this->existentSiteJson;
-
-    //     $this->mockHandler->append(new Response(200, [], $json));
-    //     $this->site = $this->apiClient->get('phptest');
-
-    //     $this->expectException(DecryptionNeeded::class);
-    //     $this->site->getMetadata();
-    // }
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::setMetadata
      */
     public function testSetMetadataOnSiteWithMetadataBeforeDecryptionThrowsException()
     {
@@ -382,6 +489,7 @@ JSON;
 
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::setMetadata
      */
     public function testSetMetadataOnSiteWithMetadataAfterDecryption()
     {
@@ -397,11 +505,12 @@ JSON;
         ];
         $this->site->setMetadata($metadata);
 
-        $this->assertEquals($metadata['title'], $this->site->getMetadata('title'));
+        $this->assertEquals($metadata['title'], $this->site->getMetadata()['title']);
     }
     
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::setMetadata
      */
     public function testSetMetadataOnSiteWithoutMetadataAfterDecryption()
     {
@@ -423,6 +532,7 @@ JSON;
     
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::setMetadata
      */
     public function testSetMetadataWithEmptyArrayRemovesMetadataOnSiteWithMetadataAfterDecryption()
     {
@@ -440,6 +550,7 @@ JSON;
     
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::removeMetadata
      */
     public function testRemoveMetadataBeforeDecryptionThrowsException()
     {
@@ -454,6 +565,7 @@ JSON;
     
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::removeMetadata
      */
     public function testRemoveMetadataOnSiteWithMetadataAfterDecryption()
     {
@@ -471,6 +583,7 @@ JSON;
     
     /**
      * @test
+     * @covers \Filisko\ProtectedText\Site::removeMetadata
      */
     public function testRemoveMetadataOnSiteWithoutMetadataAfterDecryption()
     {
@@ -486,36 +599,174 @@ JSON;
         $this->assertEquals($this->site->getDecryptedContent(), 'first contentf47c13a09bfcad9eb1f81fbf12c04516e0d900e409a74c660f933e69cf93914e16bc9facc7d379a036fe71468bd4504f2a388a0a28a9b727a38ab7843203488csecond content');
     }
 
-    // /**
-    //  * @test
-    //  */
-    // public function testSetMetadataOnSiteWithMetadataAfterDecryption()
-    // {
-    //     $json = $this->existentSiteJsonWithMetadata;
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::getTabs
+     */
+    public function testGetTabsOnExistentSite()
+    {
+        $json = $this->existentSiteJson;
 
-    //     $this->mockHandler->append(new Response(200, [], $json));
-    //     $this->site = $this->apiClient->get('phptest');
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
 
-    //     $password = '123123';
-    //     $this->site->decrypt($password);
+        $expected = [
+            0 => "first content",
+            1 => "second content"
+        ];
 
-    //     // $stub = $this->createMock(Site::class);
-    //     // $stub->method('getMetadata')
-    //     //     ->willReturn([
-    //     //         'title' => 'Some'
-    //     //     ]);
+        $this->assertEquals($expected, $this->site->getTabs());
+    }
 
-    //     // $this->assertSame([
-    //     //     'title' => 'Some'
-    //     // ], $stub->getMetadata());
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::updateTabs
+     * @covers \Filisko\ProtectedText\Site::getTabSeparatorHash
+     */
+    public function testUpdateTabsOnExistentSite()
+    {
+        $json = $this->existentSiteJson;
 
-        
-    //     $metadata = [
-    //         'title' => 'Some'
-    //     ];
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
 
-    //     dd($this->site->setMetadata($metadata));
+        $expected = [
+            0 => "first content",
+            1 => "second content"
+        ];
 
-    //     $this->assertEquals($metadata['title'], $this->site->getMetadata('title'));
-    // }
+        $this->assertEquals($expected, $this->site->getTabs());
+    }
+
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::getTabs
+     */
+    public function testGetTabsOnExistentSiteWithMetadata()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $expected = [
+            0 => "first content",
+            1 => "second content"
+        ];
+
+        $this->assertEquals($expected, $this->site->getTabs());
+    }
+
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::updateTabs
+     * @covers \Filisko\ProtectedText\Site::getTabSeparatorHash
+     */
+    public function test_updateTabs()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $tabs = [
+            0 => "first content",
+            1 => "second content",
+            1 => "third content"
+        ];
+
+        $this->site->updateTabs($tabs);
+
+        $this->assertEquals($tabs, $this->site->getTabs());
+    }
+
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::updateTabs
+     */
+    public function test_updateTabs_on_site_with_metadata()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $tabs = [
+            0 => "first content",
+            1 => "second content",
+            1 => "third content"
+        ];
+
+        $this->site->updateTabs($tabs);
+
+        $this->assertEquals($tabs, $this->site->getTabs());
+    }
+
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::updateTabs
+     */
+    public function test_updateTabs_throws_exception_on_zero_tabs()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->site->updateTabs([]);
+    }
+
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::getRawTabs
+     * @covers \Filisko\ProtectedText\Site::getRawMetadata
+     * @covers \Filisko\ProtectedText\Site::getTabSeparatorHash
+     */
+    public function test_getRawTabs()
+    {
+        $json = $this->existentSiteJson;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $this->assertEquals([], $this->site->getMetadata());
+    }
+
+   /**
+     * @test
+     * @covers \Filisko\ProtectedText\Site::getRawTabs
+     * @covers \Filisko\ProtectedText\Site::getRawMetadata
+     * @covers \Filisko\ProtectedText\Site::getTabSeparatorHash
+     */
+    public function test_getRawTabs_on_site_with_metadata()
+    {
+        $json = $this->existentSiteJsonWithMetadata;
+
+        $this->mockHandler->append(new Response(200, [], $json));
+        $this->site = $this->apiClient->get('phptest');
+        $password = '123123';
+        $this->site->decrypt($password);
+
+        $expected = [
+            'version' => 1,
+            'title' => 'Title',
+            'color' => -1118482
+        ];
+        $this->assertEquals($expected, $this->site->getMetadata());
+    }
 }
