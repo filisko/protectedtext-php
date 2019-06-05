@@ -6,6 +6,7 @@ https://www.protectedtext.com/
 
 ```php
 use Filisko\ProtectedText\ApiClient;
+use Filisko\ProtectedText\SiteFactory;
 
 $apiClient = new ApiClient();
 
@@ -24,10 +25,6 @@ $apiClient->update($site);
 $apiClient->delete($site);
 
 // create new one
-$newSite = $apiClient->get('my_new_site');
-$newSite->setPassword('my_secure_password');
-$tabs = ['my first tab content'];
-$newSite->updateTabs($tabs);
-
+$newSite = SiteFactory::create('my_new_site', 'my_secure_password', ['my first tab content']);
 $apiClient->create($newSite);
 ```
