@@ -91,7 +91,7 @@ class Site
 
     public function getDecryptedContent()
     {
-        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to play with decrypted content');
+        if (!$this->isDecrypted()) throw new DecryptionNeeded('Decrypt this site first to get decrypted content');
 
         return $this->decryptedContent;
     }

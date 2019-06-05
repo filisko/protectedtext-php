@@ -11,11 +11,13 @@ class SiteFactory
         $decryptedContent = implode(self::getTabSeparatorHash(), $tabs);
         $encryptedContent = Helper::encrypt("{$decryptedContent}{$siteHash}", $password);
         
-        $isNew = false;
+        $isNew = true;
         $currentDBVersion = 2;
         $expectedDBVersion = 2;
 
-        return new Site($name, $encryptedContent, $isNew, $currentDBVersion, $expectedDBVersion);
+        $site = new Site($name, $encryptedContent, $isNew, $currentDBVersion, $expectedDBVersion);
+        $site->setPassword($password);
+        return $site;
     }
 
     protected static function getTabSeparatorHash()
