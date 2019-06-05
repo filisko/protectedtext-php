@@ -2,14 +2,24 @@
 namespace Filisko\ProtectedText;
 
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Client;
 use Filisko\ProtectedText\Site;
 
 class ApiClient
 {
     const BASE_URL = 'https://www.protectedtext.com/';
     
-    public function __construct(ClientInterface $client)
+    public function __construct(ClientInterface $client = null)
     {
+        if (!$client) {
+            $client = new Client([
+                'base_uri' => self::BASE_URL,
+                'timeout'  => 5,
+                'allow_redirects' => true,
+                'verify' => false
+            ]);
+        }
+
         $this->client = $client;
     }
 
@@ -42,8 +52,8 @@ class ApiClient
     {
         if (!$site->getPassword()) throw new \Exception('Site must have a password');
 
-        if (!$site->hasEncryptedContent()) {
-            throw new \Exception('encrypted content can not be empty');
+        if (!$site->getEncryptedContent()) {
+            throw new \Exception('You must add some tab');
         }
 
         $response = $this->client->post($site->getName(), [
