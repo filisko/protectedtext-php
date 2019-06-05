@@ -9,7 +9,7 @@ use Filisko\ProtectedText\ApiClient;
 
 $apiClient = new ApiClient();
 
-$site = $apiClient->get('phptest');
+$site = $apiClient->get('existent_site');
 $site->decrypt('password');
 
 $tabs = $site->getTabs();
@@ -24,7 +24,7 @@ $apiClient->update($site);
 $apiClient->delete($site);
 
 // create new one
-$newSite = $apiClient->get('phptest2');
+$newSite = $apiClient->get('my_new_site');
 $newSite->setPassword('my_secure_password');
 $tabs = ['my first tab content'];
 $newSite->updateTabs($tabs);
