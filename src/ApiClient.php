@@ -2,26 +2,12 @@
 namespace Filisko\ProtectedText;
 
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Client;
 use Filisko\ProtectedText\Site;
 
 class ApiClient
 {
-    const BASE_URL = 'https://www.protectedtext.com/';
-    
-    public function __construct(ClientInterface $client = null)
+    public function __construct(ClientInterface $client)
     {
-        // I have to find another way of doing this.. 
-        // it's interesting because the URL for example is going to be always the same
-        if (!$client) {
-            $client = new Client([
-                'base_uri' => self::BASE_URL,
-                'timeout'  => 5,
-                'allow_redirects' => true,
-                'verify' => false
-            ]);
-        }
-
         $this->client = $client;
     }
 
