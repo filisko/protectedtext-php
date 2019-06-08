@@ -11,6 +11,8 @@ class ApiClient
     
     public function __construct(ClientInterface $client = null)
     {
+        // I have to find another way of doing this.. 
+        // it's interesting because the URL for example is going to be always the same
         if (!$client) {
             $client = new Client([
                 'base_uri' => self::BASE_URL,
