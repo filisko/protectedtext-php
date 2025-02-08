@@ -2,7 +2,7 @@
 
 https://www.protectedtext.com/
 
-<!-- ![ProtectedText flow](https://www.protectedtext.com/img/logo.png) -->
+![ProtectedText flow](https://www.protectedtext.com/img/logo.png)
 
 ```php
 use Filisko\ProtectedText\ApiClientFactory;
