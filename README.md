@@ -1,7 +1,9 @@
 # ProtectedText client for PHP
 
+Visit:
 https://www.protectedtext.com
 
+## Example
 ```php
 use Filisko\ProtectedText\ApiClientFactory;
 use Filisko\ProtectedText\SiteFactory;
